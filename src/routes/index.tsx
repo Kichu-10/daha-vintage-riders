@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/daha-logo.asset.json";
 import rideAsset from "@/assets/ride.asset.json";
 
@@ -21,40 +23,40 @@ function Index() {
     { name: "Sarin Gurung", role: "Founder / Advisor" },
     { name: "Karan Gurung", role: "Founder / Chief" },
   ];
-  const events = [
-    {
-      title: "Sunday Sunrise Ride",
-      date: "SUN · 08 JUN 2026",
-      time: "05:30 AM",
-      venue: "Bharatpur → Devghat",
-      type: "RIDE",
-      desc: "Easy 60km loop along the Narayani. Vintage iron only. Breakfast at Devghat.",
+  const { data: events } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, title, slug, event_type, starts_at, venue, description, is_paid, price")
+        .in("status", ["upcoming", "ongoing"])
+        .order("starts_at", { ascending: true })
+        .limit(6);
+      if (error) throw error;
+      return data;
     },
-    {
-      title: "Monthly Brotherhood Meet",
-      date: "SAT · 14 JUN 2026",
-      time: "06:00 PM",
-      venue: "DAHA Garage · Chitwan",
-      type: "MEETING",
-      desc: "Monthly catch-up. New prospects welcome. Bring your machine and stories.",
+  });
+  const { data: notices } = useQuery({
+    queryKey: ["notices"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notices")
+        .select("id, title, body, is_pinned, published_at")
+        .order("is_pinned", { ascending: false })
+        .order("published_at", { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data;
     },
-    {
-      title: "Mustang Highland Run",
-      date: "FRI · 11 JUL 2026",
-      time: "05:00 AM · 4 days",
-      venue: "Chitwan → Mustang",
-      type: "TOUR",
-      desc: "Annual flagship tour. Sign-up required. Mechanic + support vehicle included.",
+  });
+  const { data: sponsors } = useQuery({
+    queryKey: ["sponsors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sponsors").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
     },
-    {
-      title: "Vintage Wrench Day",
-      date: "SUN · 27 JUL 2026",
-      time: "09:00 AM",
-      venue: "DAHA Garage · Chitwan",
-      type: "WORKSHOP",
-      desc: "Open garage. Tune, polish, and wrench together. Tools and chai provided.",
-    },
-  ];
+  });
   const whatsappNumber = "9779811807747";
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hey Chief, I want to ride with DAHA Vintage MC.")}`;
   return (
