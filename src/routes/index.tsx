@@ -165,6 +165,59 @@ function Index() {
       </section>
 
       {/* RIDE GALLERY */}
+      <section id="events" className="py-32 px-6 bg-card/40 border-y border-border">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <div className="font-stencil text-xs tracking-[0.5em] text-accent mb-6">THE SCHEDULE</div>
+            <h2 className="font-display text-5xl md:text-7xl">UPCOMING RIDES & MEETS</h2>
+            <p className="font-body text-muted-foreground mt-6 max-w-2xl mx-auto">
+              Mark your calendar. Fuel up. Show up. Every ride leaves on time — vintage time.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {events.map((e) => (
+              <article
+                key={e.title}
+                className="group relative bg-background border border-border hover:border-accent transition-all duration-500 p-8 flex gap-6"
+              >
+                <div className="flex flex-col items-center justify-center min-w-[110px] border-r border-border pr-6 group-hover:border-accent transition-colors">
+                  <div className="font-stencil text-[10px] tracking-[0.3em] text-accent">{e.type}</div>
+                  <div className="font-display text-3xl mt-3 leading-none text-center">
+                    {e.date.split("·")[1]?.trim().split(" ")[0]}
+                  </div>
+                  <div className="font-stencil text-[10px] tracking-[0.3em] text-muted-foreground mt-1">
+                    {e.date.split("·")[1]?.trim().split(" ")[1]}
+                  </div>
+                  <div className="h-px w-8 bg-border my-3 group-hover:bg-accent transition-colors" />
+                  <div className="font-stencil text-[10px] tracking-[0.3em] text-muted-foreground">
+                    {e.date.split("·")[0]?.trim()}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-display text-2xl md:text-3xl mb-2">{e.title}</h3>
+                  <div className="font-stencil text-[11px] tracking-[0.3em] text-accent mb-1">
+                    {e.time}
+                  </div>
+                  <div className="font-body text-sm text-muted-foreground mb-4">
+                    📍 {e.venue}
+                  </div>
+                  <p className="font-body text-sm text-foreground/80 leading-relaxed">{e.desc}</p>
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-5 font-stencil text-xs tracking-[0.3em] text-accent hover:underline"
+                  >
+                    RSVP ON WHATSAPP →
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* RIDE GALLERY */}
       <section id="ride" className="py-32 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
