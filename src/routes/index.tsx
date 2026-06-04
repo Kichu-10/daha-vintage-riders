@@ -21,6 +21,42 @@ function Index() {
     { name: "Sarin Gurung", role: "Founder / Advisor" },
     { name: "Karan Gurung", role: "Founder / Chief" },
   ];
+  const events = [
+    {
+      title: "Sunday Sunrise Ride",
+      date: "SUN · 08 JUN 2026",
+      time: "05:30 AM",
+      venue: "Bharatpur → Devghat",
+      type: "RIDE",
+      desc: "Easy 60km loop along the Narayani. Vintage iron only. Breakfast at Devghat.",
+    },
+    {
+      title: "Monthly Brotherhood Meet",
+      date: "SAT · 14 JUN 2026",
+      time: "06:00 PM",
+      venue: "DAHA Garage · Chitwan",
+      type: "MEETING",
+      desc: "Monthly catch-up. New prospects welcome. Bring your machine and stories.",
+    },
+    {
+      title: "Mustang Highland Run",
+      date: "FRI · 11 JUL 2026",
+      time: "05:00 AM · 4 days",
+      venue: "Chitwan → Mustang",
+      type: "TOUR",
+      desc: "Annual flagship tour. Sign-up required. Mechanic + support vehicle included.",
+    },
+    {
+      title: "Vintage Wrench Day",
+      date: "SUN · 27 JUL 2026",
+      time: "09:00 AM",
+      venue: "DAHA Garage · Chitwan",
+      type: "WORKSHOP",
+      desc: "Open garage. Tune, polish, and wrench together. Tools and chai provided.",
+    },
+  ];
+  const whatsappNumber = "9779811807747";
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hey Chief, I want to ride with DAHA Vintage MC.")}`;
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* NAV */}
@@ -36,6 +72,7 @@ function Index() {
           <div className="hidden md:flex gap-8 font-body uppercase text-sm tracking-widest">
             <a href="#story" className="hover:text-accent transition">Story</a>
             <a href="#founders" className="hover:text-accent transition">Founders</a>
+            <a href="#events" className="hover:text-accent transition">Events</a>
             <a href="#ride" className="hover:text-accent transition">The Ride</a>
             <a href="#join" className="hover:text-accent transition">Join</a>
           </div>
