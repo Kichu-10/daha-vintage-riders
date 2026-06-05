@@ -89,11 +89,13 @@ where email = '${userEmail}';`}</pre>
           <TabsList className="mb-6">
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="registrations">Registrations</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="notices">Notices</TabsTrigger>
             <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
           </TabsList>
           <TabsContent value="events"><EventsAdmin /></TabsContent>
           <TabsContent value="registrations"><RegistrationsAdmin /></TabsContent>
+          <TabsContent value="members"><MembersAdmin /></TabsContent>
           <TabsContent value="notices"><NoticesAdmin /></TabsContent>
           <TabsContent value="sponsors"><SponsorsAdmin /></TabsContent>
         </Tabs>
