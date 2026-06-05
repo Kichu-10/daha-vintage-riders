@@ -135,11 +135,20 @@ function Index() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="font-stencil text-xs tracking-[0.5em] text-accent mb-6">CHAPTER 01</div>
           <h2 className="font-display text-5xl md:text-7xl mb-10">BUILT ON CHROME & DUST</h2>
-          <p className="font-body text-lg md:text-xl text-muted-foreground leading-relaxed">
-            DAHA Vintage MC was forged in Chitwan by riders who refuse to let the old machines die.
-            We chase mountain passes, jungle roads, and forgotten highways — wrenching, riding, and
-            keeping the soul of vintage motorcycling alive in Nepal.
-          </p>
+          <div className="font-body text-lg md:text-xl text-muted-foreground leading-relaxed space-y-6">
+            <p>
+              Established in 2023 in Chitwan, Nepal, DAHA Vintage Motorcycle Club Chitwan was founded by a close-knit family of brothers. What began with blood brothers and cousins has grown into a larger brotherhood united by a shared passion for vintage motorcycles, adventure, and service to society. Today, our club proudly includes blood brothers, cousins, and brothers from different families who share the same values of loyalty, respect, and unity.
+            </p>
+            <p>
+              We ride not only for the thrill of the journey but also to create a positive impact in our society. Every mile we travel brings hope, support, and opportunities to those in need.
+            </p>
+            <p>
+              Our mission is to promote tourism, strengthen brotherhood among riders, and actively engage in social work that benefits society. Through our rides and community initiatives, we proudly showcase the beauty, culture, and spirit of Chitwan to the world.
+            </p>
+            <p>
+              We are committed to preserving the heritage of unity, service, and responsible tourism.
+            </p>
+          </div>
         </div>
       </section>
 
