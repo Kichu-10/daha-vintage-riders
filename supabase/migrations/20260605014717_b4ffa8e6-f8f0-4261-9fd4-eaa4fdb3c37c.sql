@@ -1,0 +1,1 @@
+revoke execute on function public.grant_chief_admin() from public, anon, authenticated;
