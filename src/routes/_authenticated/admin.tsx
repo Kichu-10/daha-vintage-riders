@@ -485,7 +485,25 @@ function MembersAdmin() {
               </div>
             )}
             {m.payment_proof_url && (
-              <a href={m.payment_proof_url} target="_blank" rel="noopener" className="text-xs text-accent underline">View payment proof</a>
+              <button
+                type="button"
+                className="text-xs text-accent underline"
+                onClick={async () => {
+                  try {
+                    const url = new URL(m.payment_proof_url);
+                    const marker = "/payment-proofs/";
+                    const idx = url.pathname.indexOf(marker);
+                    const path = idx >= 0 ? url.pathname.slice(idx + marker.length) : m.payment_proof_url;
+                    const { data, error } = await supabase.storage.from("payment-proofs").createSignedUrl(path, 300);
+                    if (error) throw error;
+                    window.open(data.signedUrl, "_blank");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Could not open proof");
+                  }
+                }}
+              >
+                View payment proof
+              </button>
             )}
             {m.status === "pending" && (
               <div className="mt-3 space-y-2">
