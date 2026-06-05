@@ -490,6 +490,7 @@ function MembersAdmin() {
                 className="text-xs text-accent underline"
                 onClick={async () => {
                   try {
+                    if (!m.payment_proof_url) return;
                     const url = new URL(m.payment_proof_url);
                     const marker = "/payment-proofs/";
                     const idx = url.pathname.indexOf(marker);
