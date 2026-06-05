@@ -337,3 +337,115 @@ function Index() {
     </div>
   );
 }
+
+function JoinSection({ whatsappLink }: { whatsappLink: string }) {
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    email: "",
+    address: "",
+    bike_model: "",
+    message: "",
+    payment_method: "eSewa",
+    amount: 1000,
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.full_name || !form.phone) {
+      toast.error("Name and phone are required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      let proofUrl: string | null = null;
+      if (file) {
+        const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+        const { error: upErr } = await supabase.storage.from("payment-proofs").upload(path, file);
+        if (upErr) throw upErr;
+        const { data } = supabase.storage.from("payment-proofs").getPublicUrl(path);
+        proofUrl = data.publicUrl;
+      }
+      const { error } = await supabase.from("memberships").insert({
+        full_name: form.full_name,
+        phone: form.phone,
+        email: form.email || null,
+        address: form.address || null,
+        bike_model: form.bike_model || null,
+        message: form.message || null,
+        payment_method: form.payment_method,
+        amount: form.amount,
+        payment_proof_url: proofUrl,
+      });
+      if (error) throw error;
+      toast.success("Application submitted! The Chief will review it shortly.");
+      setForm({ full_name: "", phone: "", email: "", address: "", bike_model: "", message: "", payment_method: "eSewa", amount: 1000 });
+      setFile(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section id="join" className="py-32 px-6 relative grain">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-10">
+          <div className="font-stencil text-xs tracking-[0.5em] text-accent mb-6">PROSPECTS WELCOME</div>
+          <h2 className="font-display text-5xl md:text-7xl mb-6">JOIN THE BROTHERHOOD</h2>
+          <p className="font-body text-muted-foreground">
+            Fill the form, pay the membership fee, and upload your payment proof. The Chief will verify and confirm your membership.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-card border border-border p-8 space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div><Label>Full name *</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+            <div><Label>Phone *</Label><Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div><Label>Bike model</Label><Input placeholder="e.g. Royal Enfield Classic 350" value={form.bike_model} onChange={(e) => setForm({ ...form, bike_model: e.target.value })} /></div>
+            <div>
+              <Label>Payment method</Label>
+              <select className="w-full h-9 px-3 bg-background border border-input rounded-md" value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })}>
+                {["eSewa", "Khalti", "Bank transfer", "Cash"].map((m) => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div><Label>Amount paid (NPR)</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></div>
+            <div>
+              <Label>Payment proof (screenshot)</Label>
+              <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </div>
+          </div>
+          <div><Label>Why do you want to join?</Label><Textarea rows={3} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} /></div>
+
+          <div className="bg-background border border-dashed border-border p-4 text-sm text-muted-foreground">
+            <strong className="text-foreground">Payment instructions:</strong> Send NPR {form.amount} via {form.payment_method} to <span className="text-accent">9811807747</span>, then upload the screenshot above.
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button type="submit" disabled={submitting} className="flex-1 font-body uppercase tracking-widest">
+              {submitting ? "Submitting…" : "Submit application"}
+            </Button>
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-3 px-6 py-2 bg-[#25D366] text-black font-body uppercase tracking-widest text-sm hover:bg-[#25D366]/90 transition"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden>
+                <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.671 5.482l.197.312-1.005 3.669 3.626-.962z"/>
+              </svg>
+              Chat the Chief
+            </a>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
+}
