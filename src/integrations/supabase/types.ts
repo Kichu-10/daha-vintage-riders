@@ -118,6 +118,60 @@ export type Database = {
           },
         ]
       }
+      memberships: {
+        Row: {
+          address: string | null
+          amount: number | null
+          bike_model: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          message: string | null
+          payment_method: string | null
+          payment_proof_url: string | null
+          phone: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["membership_status"]
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          amount?: number | null
+          bike_model?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          message?: string | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          phone: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          amount?: number | null
+          bike_model?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          message?: string | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          phone?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notices: {
         Row: {
           body: string
@@ -324,6 +378,7 @@ export type Database = {
         | "social"
         | "race"
         | "other"
+      membership_status: "pending" | "approved" | "rejected"
       payment_status: "not_required" | "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
@@ -463,6 +518,7 @@ export const Constants = {
         "race",
         "other",
       ],
+      membership_status: ["pending", "approved", "rejected"],
       payment_status: ["not_required", "pending", "verified", "rejected"],
     },
   },
