@@ -89,11 +89,13 @@ where email = '${userEmail}';`}</pre>
           <TabsList className="mb-6">
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="registrations">Registrations</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="notices">Notices</TabsTrigger>
             <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
           </TabsList>
           <TabsContent value="events"><EventsAdmin /></TabsContent>
           <TabsContent value="registrations"><RegistrationsAdmin /></TabsContent>
+          <TabsContent value="members"><MembersAdmin /></TabsContent>
           <TabsContent value="notices"><NoticesAdmin /></TabsContent>
           <TabsContent value="sponsors"><SponsorsAdmin /></TabsContent>
         </Tabs>
@@ -386,6 +388,67 @@ function SponsorsAdmin() {
             <Button size="icon" variant="ghost" onClick={() => del.mutate(s.id)}><Trash2 className="w-4 h-4" /></Button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+function MembersAdmin() {
+  const qc = useQueryClient();
+  const { data: members } = useQuery({
+    queryKey: ["admin-members"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("memberships").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "approved" | "rejected" | "pending" }) => {
+      const { error } = await supabase.from("memberships").update({ status, reviewed_at: new Date().toISOString() }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["admin-members"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl mb-4">MEMBERSHIP APPLICATIONS</h2>
+      <div className="space-y-3">
+        {members?.map((m) => (
+          <div key={m.id} className="bg-card border border-border p-4">
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <div>
+                <div className="font-display text-lg">{m.full_name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {m.phone}{m.email ? ` · ${m.email}` : ""}{m.bike_model ? ` · ${m.bike_model}` : ""}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Paid NPR {m.amount ?? 0} via {m.payment_method ?? "—"} · {new Date(m.created_at).toLocaleString()}
+                </div>
+              </div>
+              <Badge variant={m.status === "approved" ? "default" : m.status === "rejected" ? "destructive" : "secondary"}>
+                {m.status}
+              </Badge>
+            </div>
+            {m.message && <p className="text-sm text-foreground/80 mb-2">"{m.message}"</p>}
+            {m.payment_proof_url && (
+              <a href={m.payment_proof_url} target="_blank" rel="noopener" className="text-xs text-accent underline">View payment proof</a>
+            )}
+            {m.status === "pending" && (
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" onClick={() => updateStatus.mutate({ id: m.id, status: "approved" })}>
+                  <CheckCircle className="w-3 h-3" /> Approve
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => updateStatus.mutate({ id: m.id, status: "rejected" })}>
+                  <XCircle className="w-3 h-3" /> Reject
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+        {members?.length === 0 && <p className="text-muted-foreground text-sm">No applications yet.</p>}
       </div>
     </div>
   );

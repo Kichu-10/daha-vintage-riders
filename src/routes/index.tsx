@@ -1,6 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import logoAsset from "@/assets/daha-logo.asset.json";
 import rideAsset from "@/assets/ride.asset.json";
 
@@ -59,6 +66,23 @@ function Index() {
   });
   const whatsappNumber = "9779811807747";
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hey Chief, I want to ride with DAHA Vintage MC.")}`;
+
+  // calendar: highlight dates that have events
+  const eventDates = useMemo(
+    () => (events ?? []).map((e) => new Date(e.starts_at)),
+    [events],
+  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const eventsOnSelectedDate = (events ?? []).filter((e) => {
+    if (!selectedDate) return false;
+    const d = new Date(e.starts_at);
+    return (
+      d.getFullYear() === selectedDate.getFullYear() &&
+      d.getMonth() === selectedDate.getMonth() &&
+      d.getDate() === selectedDate.getDate()
+    );
+  });
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* NAV */}
@@ -231,6 +255,43 @@ function Index() {
               </article>
               );
             })}
+            {(events ?? []).length === 0 && (
+              <div className="md:col-span-2 text-center py-16 border border-dashed border-border font-stencil text-xs tracking-[0.4em] text-muted-foreground">
+                NO UPCOMING RIDES POSTED. CHECK BACK SOON.
+              </div>
+            )}
+          </div>
+
+          {/* CALENDAR */}
+          <div className="mt-16 grid md:grid-cols-[auto_1fr] gap-10 items-start">
+            <div className="bg-background border border-border p-4 mx-auto">
+              <div className="font-stencil text-[10px] tracking-[0.4em] text-accent mb-3 text-center">RIDE CALENDAR</div>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                modifiers={{ hasEvent: eventDates }}
+                modifiersClassNames={{ hasEvent: "bg-accent/30 text-accent font-bold rounded-full" }}
+              />
+            </div>
+            <div>
+              <div className="font-stencil text-[10px] tracking-[0.4em] text-accent mb-3">
+                {selectedDate ? selectedDate.toDateString().toUpperCase() : "SELECT A DATE"}
+              </div>
+              {selectedDate && eventsOnSelectedDate.length === 0 && (
+                <p className="font-body text-muted-foreground text-sm">No rides scheduled on this date.</p>
+              )}
+              <div className="space-y-3">
+                {eventsOnSelectedDate.map((e) => (
+                  <div key={e.id} className="bg-background border border-border p-4">
+                    <div className="font-display text-xl">{e.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(e.starts_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · {e.venue}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -257,35 +318,7 @@ function Index() {
       </section>
 
       {/* JOIN */}
-      <section id="join" className="py-32 px-6 relative grain">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="font-stencil text-xs tracking-[0.5em] text-accent mb-6">PROSPECTS WELCOME</div>
-          <h2 className="font-display text-5xl md:text-7xl mb-8">JOIN THE BROTHERHOOD</h2>
-          <p className="font-body text-lg text-muted-foreground mb-10">
-            Own a vintage machine? Got grease under your nails and asphalt in your blood?
-            Roll into Chitwan and find us.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-10 py-4 bg-[#25D366] text-black font-body uppercase tracking-widest hover:bg-[#25D366]/90 transition"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" aria-hidden>
-                <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.671 5.482l.197.312-1.005 3.669 3.626-.962zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z"/>
-              </svg>
-              Chat the Chief on WhatsApp
-            </a>
-            <a
-              href="tel:+9779811807747"
-              className="inline-block px-10 py-4 border border-foreground/30 text-foreground font-body uppercase tracking-widest hover:border-accent hover:text-accent transition"
-            >
-              Call · 9811807747
-            </a>
-          </div>
-        </div>
-      </section>
+      <JoinSection whatsappLink={whatsappLink} />
 
       {/* FOOTER */}
       <footer className="border-t border-border py-12 px-6">
@@ -302,5 +335,117 @@ function Index() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function JoinSection({ whatsappLink }: { whatsappLink: string }) {
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    email: "",
+    address: "",
+    bike_model: "",
+    message: "",
+    payment_method: "eSewa",
+    amount: 1000,
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.full_name || !form.phone) {
+      toast.error("Name and phone are required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      let proofUrl: string | null = null;
+      if (file) {
+        const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+        const { error: upErr } = await supabase.storage.from("payment-proofs").upload(path, file);
+        if (upErr) throw upErr;
+        const { data } = supabase.storage.from("payment-proofs").getPublicUrl(path);
+        proofUrl = data.publicUrl;
+      }
+      const { error } = await supabase.from("memberships").insert({
+        full_name: form.full_name,
+        phone: form.phone,
+        email: form.email || null,
+        address: form.address || null,
+        bike_model: form.bike_model || null,
+        message: form.message || null,
+        payment_method: form.payment_method,
+        amount: form.amount,
+        payment_proof_url: proofUrl,
+      });
+      if (error) throw error;
+      toast.success("Application submitted! The Chief will review it shortly.");
+      setForm({ full_name: "", phone: "", email: "", address: "", bike_model: "", message: "", payment_method: "eSewa", amount: 1000 });
+      setFile(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section id="join" className="py-32 px-6 relative grain">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-10">
+          <div className="font-stencil text-xs tracking-[0.5em] text-accent mb-6">PROSPECTS WELCOME</div>
+          <h2 className="font-display text-5xl md:text-7xl mb-6">JOIN THE BROTHERHOOD</h2>
+          <p className="font-body text-muted-foreground">
+            Fill the form, pay the membership fee, and upload your payment proof. The Chief will verify and confirm your membership.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-card border border-border p-8 space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div><Label>Full name *</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+            <div><Label>Phone *</Label><Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div><Label>Bike model</Label><Input placeholder="e.g. Royal Enfield Classic 350" value={form.bike_model} onChange={(e) => setForm({ ...form, bike_model: e.target.value })} /></div>
+            <div>
+              <Label>Payment method</Label>
+              <select className="w-full h-9 px-3 bg-background border border-input rounded-md" value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })}>
+                {["eSewa", "Khalti", "Bank transfer", "Cash"].map((m) => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div><Label>Amount paid (NPR)</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></div>
+            <div>
+              <Label>Payment proof (screenshot)</Label>
+              <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </div>
+          </div>
+          <div><Label>Why do you want to join?</Label><Textarea rows={3} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} /></div>
+
+          <div className="bg-background border border-dashed border-border p-4 text-sm text-muted-foreground">
+            <strong className="text-foreground">Payment instructions:</strong> Send NPR {form.amount} via {form.payment_method} to <span className="text-accent">9811807747</span>, then upload the screenshot above.
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button type="submit" disabled={submitting} className="flex-1 font-body uppercase tracking-widest">
+              {submitting ? "Submitting…" : "Submit application"}
+            </Button>
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-3 px-6 py-2 bg-[#25D366] text-black font-body uppercase tracking-widest text-sm hover:bg-[#25D366]/90 transition"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden>
+                <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.671 5.482l.197.312-1.005 3.669 3.626-.962z"/>
+              </svg>
+              Chat the Chief
+            </a>
+          </div>
+        </form>
+      </div>
+    </section>
   );
 }
