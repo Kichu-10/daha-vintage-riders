@@ -29,10 +29,39 @@ function EventPage() {
     participants: 1, payment_proof_url: "", payment_method: "", notes: "",
   });
   const [ticket, setTicket] = useState<string | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [memberStatus, setMemberStatus] = useState<"unknown" | "checking" | "approved" | "not_member">("unknown");
+
+  async function verifyMember() {
+    if (!form.phone.trim()) { toast.error("Enter your phone first"); return; }
+    setMemberStatus("checking");
+    const { data } = await supabase
+      .from("memberships")
+      .select("status, full_name")
+      .eq("phone", form.phone.trim())
+      .eq("status", "approved")
+      .maybeSingle();
+    if (data) {
+      setMemberStatus("approved");
+      setForm((f) => ({ ...f, name: f.name || data.full_name }));
+      toast.success(`Welcome, ${data.full_name}`);
+    } else {
+      setMemberStatus("not_member");
+      toast.error("Phone not found among approved members. Apply for membership first.");
+    }
+  }
 
   const register = useMutation({
     mutationFn: async () => {
       if (!event) throw new Error("Event not loaded");
+      if (memberStatus !== "approved") throw new Error("Please verify membership before registering");
+      let proofUrl = form.payment_proof_url || null;
+      if (proofFile) {
+        const path = `event-${event.id}-${Date.now()}-${proofFile.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+        const { error: upErr } = await supabase.storage.from("payment-proofs").upload(path, proofFile);
+        if (upErr) throw upErr;
+        proofUrl = supabase.storage.from("payment-proofs").getPublicUrl(path).data.publicUrl;
+      }
       const { data, error } = await supabase.from("registrations").insert({
         event_id: event.id,
         name: form.name, phone: form.phone, email: form.email,
@@ -40,7 +69,7 @@ function EventPage() {
         team_name: form.team_name || null,
         participants: form.participants,
         payment_status: event.is_paid ? "pending" : "not_required",
-        payment_proof_url: form.payment_proof_url || null,
+        payment_proof_url: proofUrl,
         payment_method: form.payment_method || null,
         notes: form.notes || null,
       }).select("ticket_code").single();
@@ -107,11 +136,17 @@ function EventPage() {
                 className="bg-card border border-border p-6 space-y-3"
               >
                 <h2 className="font-display text-2xl mb-2">REGISTER</h2>
-                <div><Label>Full name *</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Phone *</Label><Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-                  <div><Label>Email *</Label><Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div className="bg-background border border-accent/40 p-3 space-y-2">
+                  <Label>Member phone *</Label>
+                  <div className="flex gap-2">
+                    <Input required placeholder="Your approved membership phone" value={form.phone} onChange={(e) => { setForm({ ...form, phone: e.target.value }); setMemberStatus("unknown"); }} />
+                    <Button type="button" variant="outline" onClick={verifyMember}>{memberStatus === "checking" ? "…" : "Verify"}</Button>
+                  </div>
+                  {memberStatus === "approved" && <p className="text-xs text-accent">✓ Verified member</p>}
+                  {memberStatus === "not_member" && <p className="text-xs text-destructive">Not an approved member. <Link to="/" className="underline">Apply here</Link></p>}
                 </div>
+                <div><Label>Full name *</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+                <div><Label>Email *</Label><Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                 <div><Label>School / College</Label><Input value={form.school_college} onChange={(e) => setForm({ ...form, school_college: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Team name</Label><Input value={form.team_name} onChange={(e) => setForm({ ...form, team_name: e.target.value })} /></div>
@@ -122,7 +157,7 @@ function EventPage() {
                   <div className="border border-accent/40 bg-background p-4 space-y-3 mt-2">
                     <div className="font-stencil text-[10px] tracking-[0.4em] text-accent">PAYMENT — NPR {event.price}</div>
                     <p className="text-xs text-muted-foreground">
-                      Pay via eSewa / Khalti / bank transfer to <b>9811807747</b>, then paste the screenshot URL below.
+                      Pay via eSewa / Khalti / bank transfer to <b>9811807747</b>, then upload your payment screenshot below.
                       Admin will verify within 24 hours.
                     </p>
                     <div>
@@ -132,12 +167,15 @@ function EventPage() {
                         <option>eSewa</option><option>Khalti</option><option>Bank transfer</option><option>QR / Cash</option>
                       </select>
                     </div>
-                    <div><Label>Payment screenshot URL</Label><Input placeholder="https://…" value={form.payment_proof_url} onChange={(e) => setForm({ ...form, payment_proof_url: e.target.value })} /></div>
+                    <div>
+                      <Label>Payment screenshot</Label>
+                      <Input type="file" accept="image/*" onChange={(e) => setProofFile(e.target.files?.[0] ?? null)} />
+                    </div>
                   </div>
                 )}
 
                 <div><Label>Notes (optional)</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-                <Button type="submit" disabled={register.isPending} className="w-full">
+                <Button type="submit" disabled={register.isPending || memberStatus !== "approved"} className="w-full">
                   {register.isPending ? "Submitting…" : event.is_paid ? "Submit registration" : "Confirm spot"}
                 </Button>
               </form>
