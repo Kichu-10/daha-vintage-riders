@@ -255,6 +255,43 @@ function Index() {
               </article>
               );
             })}
+            {(events ?? []).length === 0 && (
+              <div className="md:col-span-2 text-center py-16 border border-dashed border-border font-stencil text-xs tracking-[0.4em] text-muted-foreground">
+                NO UPCOMING RIDES POSTED. CHECK BACK SOON.
+              </div>
+            )}
+          </div>
+
+          {/* CALENDAR */}
+          <div className="mt-16 grid md:grid-cols-[auto_1fr] gap-10 items-start">
+            <div className="bg-background border border-border p-4 mx-auto">
+              <div className="font-stencil text-[10px] tracking-[0.4em] text-accent mb-3 text-center">RIDE CALENDAR</div>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                modifiers={{ hasEvent: eventDates }}
+                modifiersClassNames={{ hasEvent: "bg-accent/30 text-accent font-bold rounded-full" }}
+              />
+            </div>
+            <div>
+              <div className="font-stencil text-[10px] tracking-[0.4em] text-accent mb-3">
+                {selectedDate ? selectedDate.toDateString().toUpperCase() : "SELECT A DATE"}
+              </div>
+              {selectedDate && eventsOnSelectedDate.length === 0 && (
+                <p className="font-body text-muted-foreground text-sm">No rides scheduled on this date.</p>
+              )}
+              <div className="space-y-3">
+                {eventsOnSelectedDate.map((e) => (
+                  <div key={e.id} className="bg-background border border-border p-4">
+                    <div className="font-display text-xl">{e.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(e.starts_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · {e.venue}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
