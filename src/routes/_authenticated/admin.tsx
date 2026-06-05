@@ -394,6 +394,8 @@ function SponsorsAdmin() {
 }
 function MembersAdmin() {
   const qc = useQueryClient();
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const { data: members } = useQuery({
     queryKey: ["admin-members"],
     queryFn: async () => {
@@ -404,19 +406,63 @@ function MembersAdmin() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "approved" | "rejected" | "pending" }) => {
-      const { error } = await supabase.from("memberships").update({ status, reviewed_at: new Date().toISOString() }).eq("id", id);
+    mutationFn: async ({ id, status, admin_notes }: { id: string; status: "approved" | "rejected" | "pending"; admin_notes?: string }) => {
+      const { error } = await supabase
+        .from("memberships")
+        .update({ status, admin_notes: admin_notes ?? null, reviewed_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["admin-members"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
+  function waLink(phone: string, msg: string) {
+    const digits = phone.replace(/\D/g, "");
+    const intl = digits.startsWith("977") ? digits : `977${digits.replace(/^0+/, "")}`;
+    return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
+  }
+
+  function notify(m: any, status: "approved" | "rejected", note?: string) {
+    const base = status === "approved"
+      ? `Namaste ${m.full_name}, your DAHA Vintage MC Chitwan membership has been APPROVED ✅. Welcome to the brotherhood!`
+      : `Namaste ${m.full_name}, unfortunately your DAHA Vintage MC membership application has been declined.`;
+    const full = note ? `${base}\n\nNote from the Chief: ${note}` : base;
+    window.open(waLink(m.phone, full), "_blank");
+  }
+
+  function exportCsv(filterStatus: "approved" | "pending") {
+    const rows = (members ?? []).filter((m) => m.status === filterStatus);
+    if (rows.length === 0) { toast.error(`No ${filterStatus} members`); return; }
+    const header = ["Name", "Phone", "Email", "Address", "Bike", "Amount", "Payment Method", "Status", "Admin Notes", "Applied"];
+    const csv = [header, ...rows.map((m) => [m.full_name, m.phone, m.email ?? "", m.address ?? "", m.bike_model ?? "", m.amount ?? 0, m.payment_method ?? "", m.status, m.admin_notes ?? "", m.created_at])]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `daha-members-${filterStatus}-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const filtered = (members ?? []).filter((m) => filter === "all" || m.status === filter);
+
   return (
     <div>
-      <h2 className="font-display text-2xl mb-4">MEMBERSHIP APPLICATIONS</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="font-display text-2xl">MEMBERSHIP APPLICATIONS</h2>
+        <div className="flex gap-2 items-center">
+          <select className="h-9 px-3 bg-background border border-input rounded-md text-sm" value={filter} onChange={(e) => setFilter(e.target.value as any)}>
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <Button size="sm" variant="outline" onClick={() => exportCsv("approved")}>Export approved CSV</Button>
+          <Button size="sm" variant="outline" onClick={() => exportCsv("pending")}>Export pending CSV</Button>
+        </div>
+      </div>
       <div className="space-y-3">
-        {members?.map((m) => (
+        {filtered.map((m) => (
           <div key={m.id} className="bg-card border border-border p-4">
             <div className="flex items-center justify-between gap-4 mb-2">
               <div>
@@ -433,22 +479,40 @@ function MembersAdmin() {
               </Badge>
             </div>
             {m.message && <p className="text-sm text-foreground/80 mb-2">"{m.message}"</p>}
+            {m.admin_notes && (
+              <div className="text-xs bg-background border border-border p-2 mb-2">
+                <span className="text-accent font-stencil tracking-widest text-[10px]">CHIEF'S NOTE:</span> {m.admin_notes}
+              </div>
+            )}
             {m.payment_proof_url && (
               <a href={m.payment_proof_url} target="_blank" rel="noopener" className="text-xs text-accent underline">View payment proof</a>
             )}
             {m.status === "pending" && (
-              <div className="mt-3 flex gap-2">
-                <Button size="sm" onClick={() => updateStatus.mutate({ id: m.id, status: "approved" })}>
-                  <CheckCircle className="w-3 h-3" /> Approve
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => updateStatus.mutate({ id: m.id, status: "rejected" })}>
-                  <XCircle className="w-3 h-3" /> Reject
-                </Button>
+              <div className="mt-3 space-y-2">
+                <Textarea
+                  rows={2}
+                  placeholder="Optional note to applicant (sent via WhatsApp)"
+                  value={notes[m.id] ?? ""}
+                  onChange={(e) => setNotes({ ...notes, [m.id]: e.target.value })}
+                />
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" onClick={async () => { await updateStatus.mutateAsync({ id: m.id, status: "approved", admin_notes: notes[m.id] }); notify(m, "approved", notes[m.id]); }}>
+                    <CheckCircle className="w-3 h-3" /> Approve + WhatsApp
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={async () => { await updateStatus.mutateAsync({ id: m.id, status: "rejected", admin_notes: notes[m.id] }); notify(m, "rejected", notes[m.id]); }}>
+                    <XCircle className="w-3 h-3" /> Reject + WhatsApp
+                  </Button>
+                </div>
+              </div>
+            )}
+            {m.status !== "pending" && (
+              <div className="mt-2">
+                <a href={waLink(m.phone, `Hello ${m.full_name}, from DAHA Vintage MC Chitwan.`)} target="_blank" rel="noopener" className="text-xs text-accent underline">Message on WhatsApp</a>
               </div>
             )}
           </div>
         ))}
-        {members?.length === 0 && <p className="text-muted-foreground text-sm">No applications yet.</p>}
+        {filtered.length === 0 && <p className="text-muted-foreground text-sm">No applications match.</p>}
       </div>
     </div>
   );

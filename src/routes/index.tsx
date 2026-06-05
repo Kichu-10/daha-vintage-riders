@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import logoAsset from "@/assets/daha-logo.asset.json";
 import rideAsset from "@/assets/ride.asset.json";
 
@@ -351,6 +352,25 @@ function JoinSection({ whatsappLink }: { whatsappLink: string }) {
   });
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [lookupPhone, setLookupPhone] = useState("");
+  const [lookupResult, setLookupResult] = useState<any | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+
+  async function checkStatus() {
+    if (!lookupPhone.trim()) { toast.error("Enter your phone number"); return; }
+    setLookupLoading(true);
+    const { data, error } = await supabase
+      .from("memberships")
+      .select("id, full_name, phone, bike_model, status, admin_notes, created_at, reviewed_at")
+      .eq("phone", lookupPhone.trim())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLookupLoading(false);
+    if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("No application found for that phone"); setLookupResult(null); return; }
+    setLookupResult(data);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -399,6 +419,51 @@ function JoinSection({ whatsappLink }: { whatsappLink: string }) {
           <p className="font-body text-muted-foreground">
             Fill the form, pay the membership fee, and upload your payment proof. The Chief will verify and confirm your membership.
           </p>
+        </div>
+
+        {/* STATUS LOOKUP */}
+        <div className="bg-card border border-border p-6 mb-8">
+          <div className="font-stencil text-[10px] tracking-[0.4em] text-accent mb-3">CHECK APPLICATION STATUS</div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Input placeholder="Enter the phone you applied with" value={lookupPhone} onChange={(e) => setLookupPhone(e.target.value)} />
+            <Button type="button" variant="outline" onClick={checkStatus} disabled={lookupLoading}>{lookupLoading ? "Checking…" : "Check status"}</Button>
+          </div>
+          {lookupResult && (
+            <div className="mt-5 border border-border bg-background p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="font-display text-xl">{lookupResult.full_name}</div>
+                  <div className="text-xs text-muted-foreground">{lookupResult.bike_model || "—"}</div>
+                </div>
+                <span className={`font-stencil text-[10px] tracking-[0.3em] px-3 py-1 border ${lookupResult.status === "approved" ? "border-accent text-accent" : lookupResult.status === "rejected" ? "border-destructive text-destructive" : "border-muted-foreground text-muted-foreground"}`}>
+                  {lookupResult.status?.toUpperCase()}
+                </span>
+              </div>
+              {lookupResult.admin_notes && (
+                <p className="text-sm text-foreground/80 italic mb-3">"{lookupResult.admin_notes}"</p>
+              )}
+              {lookupResult.status === "approved" && (
+                <div className="mt-4 border border-accent/40 bg-gradient-to-br from-background to-card p-6 text-center">
+                  <div className="font-stencil text-[10px] tracking-[0.5em] text-accent mb-2">OFFICIAL MEMBERSHIP CARD</div>
+                  <div className="font-display text-2xl mb-1">DAHA VINTAGE MC</div>
+                  <div className="font-stencil text-[10px] tracking-[0.4em] text-muted-foreground mb-4">CHITWAN · NEPAL</div>
+                  <div className="bg-white p-4 inline-block">
+                    <QRCodeSVG
+                      value={JSON.stringify({ id: lookupResult.id, name: lookupResult.full_name, phone: lookupResult.phone, club: "DAHA-VMC" })}
+                      size={180}
+                      level="H"
+                    />
+                  </div>
+                  <div className="font-display text-lg mt-4">{lookupResult.full_name}</div>
+                  <div className="text-xs text-muted-foreground">Member ID: {lookupResult.id.slice(0, 8).toUpperCase()}</div>
+                  <div className="text-xs text-muted-foreground">Show this QR at events for check-in.</div>
+                </div>
+              )}
+              {lookupResult.status === "pending" && (
+                <p className="text-xs text-muted-foreground">Your application is under review. We'll WhatsApp you once the Chief confirms.</p>
+              )}
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border p-8 space-y-4">

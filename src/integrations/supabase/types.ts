@@ -121,6 +121,7 @@ export type Database = {
       memberships: {
         Row: {
           address: string | null
+          admin_notes: string | null
           amount: number | null
           bike_model: string | null
           created_at: string
@@ -138,6 +139,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          admin_notes?: string | null
           amount?: number | null
           bike_model?: string | null
           created_at?: string
@@ -155,6 +157,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          admin_notes?: string | null
           amount?: number | null
           bike_model?: string | null
           created_at?: string
