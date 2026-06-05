@@ -177,33 +177,39 @@ function Index() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
-            {events.map((e) => (
+            {(events ?? []).map((e) => {
+              const d = new Date(e.starts_at);
+              const day = d.toLocaleDateString("en-US", { day: "2-digit" });
+              const month = d.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+              const weekday = d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+              const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+              return (
               <article
                 key={e.title}
                 className="group relative bg-background border border-border hover:border-accent transition-all duration-500 p-8 flex gap-6"
               >
                 <div className="flex flex-col items-center justify-center min-w-[110px] border-r border-border pr-6 group-hover:border-accent transition-colors">
-                  <div className="font-stencil text-[10px] tracking-[0.3em] text-accent">{e.type}</div>
+                  <div className="font-stencil text-[10px] tracking-[0.3em] text-accent">{e.event_type}</div>
                   <div className="font-display text-3xl mt-3 leading-none text-center">
-                    {e.date.split("·")[1]?.trim().split(" ")[0]}
+                    {day}
                   </div>
                   <div className="font-stencil text-[10px] tracking-[0.3em] text-muted-foreground mt-1">
-                    {e.date.split("·")[1]?.trim().split(" ")[1]}
+                    {month}
                   </div>
                   <div className="h-px w-8 bg-border my-3 group-hover:bg-accent transition-colors" />
                   <div className="font-stencil text-[10px] tracking-[0.3em] text-muted-foreground">
-                    {e.date.split("·")[0]?.trim()}
+                    {weekday}
                   </div>
                 </div>
                 <div className="flex-1">
                   <h3 className="font-display text-2xl md:text-3xl mb-2">{e.title}</h3>
                   <div className="font-stencil text-[11px] tracking-[0.3em] text-accent mb-1">
-                    {e.time}
+                    {time}
                   </div>
                   <div className="font-body text-sm text-muted-foreground mb-4">
                     📍 {e.venue}
                   </div>
-                  <p className="font-body text-sm text-foreground/80 leading-relaxed">{e.desc}</p>
+                  <p className="font-body text-sm text-foreground/80 leading-relaxed">{e.description}</p>
                   <a
                     href={whatsappLink}
                     target="_blank"
@@ -214,7 +220,8 @@ function Index() {
                   </a>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
