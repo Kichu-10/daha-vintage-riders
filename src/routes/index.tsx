@@ -66,6 +66,23 @@ function Index() {
   });
   const whatsappNumber = "9779811807747";
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hey Chief, I want to ride with DAHA Vintage MC.")}`;
+
+  // calendar: highlight dates that have events
+  const eventDates = useMemo(
+    () => (events ?? []).map((e) => new Date(e.starts_at)),
+    [events],
+  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const eventsOnSelectedDate = (events ?? []).filter((e) => {
+    if (!selectedDate) return false;
+    const d = new Date(e.starts_at);
+    return (
+      d.getFullYear() === selectedDate.getFullYear() &&
+      d.getMonth() === selectedDate.getMonth() &&
+      d.getDate() === selectedDate.getDate()
+    );
+  });
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* NAV */}
