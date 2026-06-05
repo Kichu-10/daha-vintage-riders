@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import logoAsset from "@/assets/daha-logo.asset.json";
 import rideAsset from "@/assets/ride.asset.json";
 
